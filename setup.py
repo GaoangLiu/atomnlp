@@ -12,9 +12,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/GaoangLiu/atomnlp",
-    package_dir={'': 'src'},
-    py_modules=['atomnlp'],
-    # packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(),
+    package_data={"atomnlp":["data/dict.txt"]},
     install_requires=['colorlog>=4.6.1', 'tqdm>=4.56.0'],
     entry_points={
         'console_scripts': ['atom=atomnlp:main'],

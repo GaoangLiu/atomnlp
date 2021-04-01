@@ -1,5 +1,5 @@
 import os, sys, time
 
-def segment(text):
-    pass 
 
+def segment(text):
+    pass

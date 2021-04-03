@@ -10,10 +10,14 @@ class MMM():
 
     def load_dictionary(self):
         file_path = os.path.dirname(
-            os.path.realpath(inspect.getfile(inspect.currentframe())))
-        for line in open(f'{file_path}/data/dict.txt', "r").readlines():
-            line = line.replace('\t', ' ')
-            self._words.add(line.split(' ')[0].rstrip())
+            os.path.realpath(inspect.getfile(
+                inspect.currentframe()))) + '/data/'
+
+        with open(f'{file_path}/dict.txt') as fd, open(
+                f'{file_path}/oov.txt') as fo:
+            for line in fd.readlines() + fo.readlines():
+                line = line.replace('\t', ' ')
+                self._words.add(line.split(' ')[0].rstrip())
 
     def forward_segment(self, text: str) -> List:
         word_list = []

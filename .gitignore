@@ -9,3 +9,4 @@ __pycache__/*
 src/*egg-info*
 src/dict.txt
 badcase.txt
+*egg-info*

@@ -14,11 +14,12 @@ class HMM:
     MIN_FLOAT = -1e10
 
     @classmethod
-    def train(cls) -> (dict, dict, list):
+    def train(cls) -> (dict, list):
+        ''' train HMM segment model from corpus '''
         if all(os.path.exists(f) for f in ('emit_p.pickle', 'trans.pickle')):
             emit_p = pickle.load(open('emit_p.pickle', 'rb'))
             trans = pickle.load(open('trans.pickle', 'rb'))
-            return emit_p, trans, {}
+            return emit_p, trans
 
         emit_p = defaultdict(int)
         ci = defaultdict(int)
@@ -27,7 +28,8 @@ class HMM:
         _map = {'b': 0, 'm': 1, 'e': 2, 's': 3}
 
         def update_trans(i, j):
-            if i < 0: return j
+            if i < 0:
+                return j
             trans[i][j] += 1
             return j
 
@@ -36,7 +38,8 @@ class HMM:
                 pre_symbol = -1
                 _words = ln.split(' ')
                 for cur in _words:
-                    if not cur: continue
+                    if not cur:
+                        continue
                     elif cur in cls.punctuations:
                         pre_symbol = -1
                     else:
@@ -44,15 +47,13 @@ class HMM:
                             emit_p[(cur, 'S')] += 1
                             ci['S'] += 1
                             pre_symbol = update_trans(pre_symbol, 3)
-
                         else:
-                            size = len(cur)
                             for i, c in enumerate(cur):
                                 if i == 0:
                                     emit_p[(c, 'B')] += 1
                                     ci['B'] += 1
                                     pre_symbol = update_trans(pre_symbol, 0)
-                                elif i == size - 1:
+                                elif i == len(cur) - 1:
                                     emit_p[(c, 'E')] += 1
                                     ci['E'] += 1
                                     pre_symbol = update_trans(pre_symbol, 2)
@@ -77,44 +78,48 @@ class HMM:
         with open('trans.pickle', 'wb') as f:
             pickle.dump(trans, f)
 
-        return emit_p, trans, ci
+        return emit_p, trans
 
     @classmethod
-    def calculate_trans(cls, emit_p: dict, ci: dict, obs: str,
+    def calculate_trans(cls,
+                        emit_p: dict,
+                        ci: dict,
+                        obs: str,
                         state: str) -> float:
         return (1 + emit_p.get((obs, state), 0)) / ci.get(state, 1)
 
     @classmethod
-    def viterbi(cls, states, text: str, start_p, trans_p, emit_p):
-        map_state_index = dict(zip('BMES', range(4)))
-
+    def viterbi(cls, text: str, trans_p, emit_p):
+        ''' a DP method to locate the word segment scheme with maximum probability 
+        for a given Chinese sentence.
+        :param text: str, observed sequences, e.g., 人性的枷锁
+        :param trans_p: dict, transition probability matrix, e.g., trans_p['B']['M'] = 0.123
+        :param emit_p: dict, emission probability matrix, e.g., emit_p[('一', 'B')] = 0.0233
+        :return: list[str], word segments, e.g., ['人性', '的' ,'枷锁']
+        '''
+        state_index = dict(zip('BMES', range(4)))
         cache = {}
+
         for i, c in enumerate(text):
             if i == 0:
                 for s in 'BS':
-                    cache[s] = (start_p[map_state_index[s]] + emit_p[(c, s)],
-                                s)
-                min_value = min(cache.values(),
-                                key=operator.itemgetter(0))[0] - 1
+                    cache[s] = (-0.5, s)  # this inital prob is customizable
                 cache['E'] = (cls.MIN_FLOAT, 'E')
                 cache['M'] = (cls.MIN_FLOAT, 'M')
             else:
-                copy_cache = cache.copy()
-                for s in states:
+                cccopy = cache.copy()
+                for s in 'BMES':
                     max_prob, _seq = float('-inf'), ''
-                    for prev_state, v in copy_cache.items():
-                        prev_index, cur_index = map_state_index[
-                            prev_state], map_state_index[s]
+                    for prev_state, v in cccopy.items():
+                        prev_index, cur_index = state_index[prev_state], state_index[s]
+
                         # not * but +
-                        new_prob = v[0] + trans_p[prev_index][
-                            cur_index] + emit_p.get((c, s), cls.MIN_FLOAT)
+                        new_prob = v[0] + trans_p[prev_index][cur_index] + emit_p.get((c, s), cls.MIN_FLOAT)
                         if new_prob > max_prob:
                             max_prob = new_prob
                             _seq = v[1]
                     cache[s] = (max_prob, _seq + '->' + s)
-            # print(i, cache)
-        # print(cache)
-        # print(cache['S'], cache['E'])
+
         seq = cache['E'][1] if cache['E'][0] > cache['S'][0] else cache['S'][1]
         print(cls._cut(text, seq))
 
@@ -138,14 +143,15 @@ class HMM:
             else:
                 pass
 
-emit_p, trans, _ = HMM.train()
+
+emit_p, trans = HMM.train()
 start_p = [-0.6931471805599453, 0, 0, -0.6931471805599453]
-states = ['B', 'M', 'E', 'S']
 
 cnt = 0
 for k, v in emit_p.items():
     print(k, v)
-    if cnt > 10: break
+    if cnt > 10:
+        break
     cnt += 1
 
 print('-' * 80)
@@ -159,7 +165,7 @@ texts = [
     '这是一种基于统计的分词方案', '这位先生您手机欠费了', '还有没有更快的方法', '买水果然后来世博园最后去世博会',
     '欢迎新老师生前来就餐', '北京大学生前来应聘', '今天天气不错哦', '就问你服不服', '我们不只在和你们一家公司对接',
     '结婚的和尚未结婚的都沿海边去了', '这也许就是一代人的命运吧', '改判被告人死刑立即执行', '检察院鲍绍坤检察长',
-    '腾讯和阿里都在新零售大举布局'
+    '腾讯和阿里都在新零售大举布局', '人性的枷锁'
 ]
 for text in texts:
-    HMM.viterbi(states, text, start_p, trans, emit_p)
+    HMM.viterbi(text, trans, emit_p)

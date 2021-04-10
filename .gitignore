@@ -10,3 +10,6 @@ src/*egg-info*
 src/dict.txt
 badcase.txt
 *egg-info*
+icwb2-data/training/*
+icwb2-data/test/*
+icwb2-data/gold/*

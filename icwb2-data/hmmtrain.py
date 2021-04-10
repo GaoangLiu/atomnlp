@@ -138,25 +138,6 @@ class HMM:
             else:
                 pass
 
-
-# def init_run():
-#     ''' estimate and save [trans/emission] to local with pickle'''
-#     if all(os.path.exists(f) for f in ('emit_p.pickle', 'trans.pickle')):
-#         emit_p = pickle.load(open('emit_p.pickle', 'rb'))
-#         trans = pickle.load(open('trans.pickle', 'rb'))
-#         print(trans)
-#     else:
-#         emit_p, ci, trans = HMM.train()
-#         print('ci is ', ci)
-#         print('trans is ', trans)
-#         print('dump emit_p')
-#         with open('emit_p.pickle', 'wb') as f:
-#             pickle.dump(emit_p, f)
-
-#         with open('trans.pickle', 'wb') as f:
-#             pickle.dump(trans, f)
-
-
 emit_p, trans, _ = HMM.train()
 start_p = [-0.6931471805599453, 0, 0, -0.6931471805599453]
 states = ['B', 'M', 'E', 'S']
